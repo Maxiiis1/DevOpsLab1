@@ -1,0 +1,44 @@
+version: "3.9"
+
+networks:
+  app-tier:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  app_static:
+
+services:
+  postgres:
+    container_name: postgres_t1
+    image: postgres:14.5-alpine
+    hostname: postgres
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_PORT=5432
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER=postgres
+    networks:
+      - app-tier
+
+  app:
+    build: .
+    container_name: t1_project_app
+    depends_on:
+      - postgres
+    ports:
+      - "8081:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/postgres
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - SERVER_PORT=8080
+    volumes:
+      - app_static:/app/static
+    networks:
+      - app-tier
